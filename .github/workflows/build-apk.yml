@@ -33,6 +33,14 @@ jobs:
         run: npm ci
 
       - name: Build web assets
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'AIzaSyDQ7TOFcBAMTDIX_IRqCvWYaSUuvXWLHck' }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'simple-appointment-manag-58f5d.firebaseapp.com' }}
+          VITE_FIREBASE_DATABASE_URL: ${{ secrets.VITE_FIREBASE_DATABASE_URL || 'https://simple-appointment-manag-58f5d-default-rtdb.asia-southeast1.firebasedatabase.app' }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'simple-appointment-manag-58f5d' }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'simple-appointment-manag-58f5d.firebasestorage.app' }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '638846224570' }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID || '1:638846224570:web:d9291b2ca66961c6e2da83' }}
         run: npm run build
 
       - name: Check Android SDK
