@@ -99,7 +99,9 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { IonButton, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonPage, IonSelect, IonSelectOption, IonTextarea, IonTitle, IonToolbar } from '@ionic/vue';
 import { addOutline, calendarClearOutline, calendarOutline, trashOutline } from 'ionicons/icons';
 import { database, isFirebaseConfigured } from '@/firebase';
-import { onValue, push, ref as databaseRef, remove, set } from 'firebase/database';
+import { auth } from '@/firebase';
+import { signInAnonymously } from 'firebase/auth';
+import { onValue, ref as databaseRef, remove, set } from 'firebase/database';
 
 type AppointmentStatus = 'Scheduled' | 'Confirmed' | 'Completed' | 'Cancelled';
 type Appointment = { id: number; client: string; date: string; time: string; purpose: string; status: AppointmentStatus };
@@ -115,8 +117,9 @@ const filteredAppointments = computed(() => {
     .sort((first, second) => `${first.date}${first.time}`.localeCompare(`${second.date}${second.time}`));
 });
 
-onMounted(() => {
-  if (isFirebaseConfigured && database) {
+onMounted(async () => {
+  if (isFirebaseConfigured && database && auth) {
+    await signInAnonymously(auth);
     onValue(databaseRef(database, 'appointments'), (snapshot) => {
       const data = snapshot.val() as Record<string, Appointment> | null;
       appointments.value = data ? Object.values(data) : [];
