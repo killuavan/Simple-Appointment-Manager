@@ -1,0 +1,7 @@
+{
+  "name": "Simple-Appointmet-Manager",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
