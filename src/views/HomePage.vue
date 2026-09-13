@@ -7,7 +7,6 @@
     </ion-header>
 
     <ion-content :fullscreen="true">
-      <ion-content>
         <main class="page-shell">
           <section class="intro">
             <div>
@@ -91,21 +90,22 @@
             </section>
           </section>
         </main>
-      </ion-content>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { IonButton, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonPage, IonSelect, IonSelectOption, IonTextarea, IonTitle, IonToolbar } from '@ionic/vue';
 import { addOutline, calendarClearOutline, calendarOutline, trashOutline } from 'ionicons/icons';
+import { database, isFirebaseConfigured } from '@/firebase';
+import { onValue, push, ref as databaseRef, remove, set } from 'firebase/database';
 
 type AppointmentStatus = 'Scheduled' | 'Confirmed' | 'Completed' | 'Cancelled';
 type Appointment = { id: number; client: string; date: string; time: string; purpose: string; status: AppointmentStatus };
 
 const statuses: AppointmentStatus[] = ['Scheduled', 'Confirmed', 'Completed', 'Cancelled'];
-const appointments = ref<Appointment[]>(loadAppointments());
+const appointments = ref<Appointment[]>([]);
 const filter = ref('All');
 const form = reactive({ client: '', date: '', time: '', purpose: '', status: 'Scheduled' as AppointmentStatus });
 
@@ -113,6 +113,17 @@ const filteredAppointments = computed(() => {
   return appointments.value
     .filter((appointment) => filter.value === 'All' || appointment.status === filter.value)
     .sort((first, second) => `${first.date}${first.time}`.localeCompare(`${second.date}${second.time}`));
+});
+
+onMounted(() => {
+  if (isFirebaseConfigured && database) {
+    onValue(databaseRef(database, 'appointments'), (snapshot) => {
+      const data = snapshot.val() as Record<string, Appointment> | null;
+      appointments.value = data ? Object.values(data) : [];
+    });
+  } else {
+    appointments.value = loadAppointments();
+  }
 });
 
 function loadAppointments(): Appointment[] {
@@ -123,12 +134,22 @@ function loadAppointments(): Appointment[] {
   }
 }
 
-function saveAppointments() {
+async function saveAppointments() {
+  if (isFirebaseConfigured) {
+    if (!database) return;
+    const firebaseDatabase = database;
+    await Promise.all(appointments.value.map((appointment) => set(databaseRef(firebaseDatabase, `appointments/${appointment.id}`), appointment)));
+  } else {
   localStorage.setItem('appointments', JSON.stringify(appointments.value));
+  }
 }
 
-function addAppointment() {
-  appointments.value.push({ id: Date.now(), ...form });
+async function addAppointment() {
+  const appointment = { id: Date.now(), ...form };
+  appointments.value.push(appointment);
+  if (isFirebaseConfigured && database) {
+    await set(databaseRef(database, `appointments/${appointment.id}`), appointment);
+  }
   saveAppointments();
   form.client = '';
   form.date = '';
@@ -137,9 +158,13 @@ function addAppointment() {
   form.status = 'Scheduled';
 }
 
-function removeAppointment(id: number) {
+async function removeAppointment(id: number) {
   appointments.value = appointments.value.filter((appointment) => appointment.id !== id);
-  saveAppointments();
+  if (isFirebaseConfigured && database) {
+    await remove(databaseRef(database, `appointments/${id}`));
+  } else {
+    saveAppointments();
+  }
 }
 
 function formatDate(date: string) {
