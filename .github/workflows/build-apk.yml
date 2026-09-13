@@ -37,6 +37,15 @@ jobs:
       - name: Synchronize Capacitor Android
         run: npx cap sync android
 
+      - name: Run build diagnostics
+        run: |
+          node --version
+          npm --version
+          npx cap --version
+          java -version
+          chmod +x android/gradlew
+          android/gradlew --version
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
