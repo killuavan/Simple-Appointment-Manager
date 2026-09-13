@@ -119,11 +119,15 @@ const filteredAppointments = computed(() => {
 
 onMounted(async () => {
   if (isFirebaseConfigured && database && auth) {
-    await signInAnonymously(auth);
-    onValue(databaseRef(database, 'appointments'), (snapshot) => {
-      const data = snapshot.val() as Record<string, Appointment> | null;
-      appointments.value = data ? Object.values(data) : [];
-    });
+    try {
+      await signInAnonymously(auth);
+      onValue(databaseRef(database, 'appointments'), (snapshot) => {
+        const data = snapshot.val() as Record<string, Appointment> | null;
+        appointments.value = data ? Object.values(data) : [];
+      });
+    } catch {
+      appointments.value = loadAppointments();
+    }
   } else {
     appointments.value = loadAppointments();
   }
